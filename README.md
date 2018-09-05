@@ -1,5 +1,5 @@
 # PPL_ASS1
-PRINCIPLE PROGRAMING LANGUAGE ASSIGNMENT 1
+## PRINCIPLE PROGRAMING LANGUAGE ASSIGNMENT 1
 
 define formally lexicon of a programming language
 
