@@ -35,9 +35,23 @@ fragment X: [xX];
 fragment Y: [yY];
 fragment Z: [zZ];
 
-program  : mptype 'main' LB RB LP body? RP EOF ;
+program: mptype 'main' LB RB LP body? RP EOF ;
+
+declaration: var_dec | fun_dec | procedure_dec ;
+
+var_dec: VAR idlist COLON TYPE SEMI ;
+
+fun_dec: FUNCTION ID LB paralist RB COLON return_type SEMI var_dec compound_dec ;
+
+procedure_dec: PROCEDURE ID LB paralist RB SEMI var_dec compound_dec ;
 
 mptype: INTTYPE | VOIDTYPE ;
+
+idlist: ID COMMA idlist | ID;
+
+paralist: para_dec SEMI paralist | para_dec |  ;
+
+para_dec: idlist COLON TYPE ;
 
 body: funcall SEMI;
 
@@ -52,22 +66,28 @@ VOIDTYPE: 'void'  ;
 ID: [A-Z_][A-Z0-9_]* ;
 
 //LITERALS
+literals
+	: INTLIT 
+	| FLOATLIT
+	| BOOL_LIT
+	| STRING_LIT
+	;
 
 INTLIT: [0-9]+;
 
 FLOATLIT: FRACPART EXPOPART?  | [0-9]+ EXPOPART;
 
-fragment FRACPART: [0-9]+? '.' [0-9]+ | [0-9]+ '.';
+fragment FRACPART: INTLIT? '.' INTLIT | INTLIT '.';
 
-fragment EXPOPART: E SIGN? [0-9]+;
+fragment EXPOPART: E SIGN? INTLIT;
 
 fragment SIGN: '-';
 
 BOOL_LIT: TRUE | FALSE;
 
-STRING_LIT: '\"' (STR_EXCEPT)* '\"';
+STRING_LIT: '"' (STR_EXCEPT)* '"';
 
-fragment STR_EXCEPT: ~[\b\f\r\n\t\'\"\\]+;
+fragment STR_EXCEPT: ~[\b\f\r\n\t\'"\\]+;
 //KEYWORD
 
 BREAK: B R E A K;
@@ -138,13 +158,13 @@ MULTIPLICATION: '*';
 
 DIVISION: '/';
 
-NOT_LOGIC: 'not';
+NOT_LOGIC: NOT ;
 
-MODULUS: 'mod';
+MODULUS: MOD ;
 
-OR_LOGIC: 'or';
+OR_LOGIC: OR ;
 
-AND_LOGIC: 'and';
+AND_LOGIC: AND ;
 
 NOT_EQUAL: '<>';
 
@@ -180,13 +200,135 @@ DD: '..';
 
 COMMA: ',';
 
+COLON: ':' ;
 //LITERALS
 
 //TYPE AND VALUE
+TYPE: PRIMITIVE_TYPES | COMBOUND_TYPE ;
 
 PRIMITIVE_TYPES: ( BOOLEAN | INTEGER | REAL | STRING );
 
 COMBOUND_TYPE: ARRAY;
+
+array_type: ARRAY LSB INTLIT DD INTLIT RSB OF TYPE ;
+
+ARRAY_ELEMENT: INTLIT | FLOATLIT | BOOL_LIT | STRING_LIT ;
+
+expression: simple_exp (operandOperator expression)? ;
+
+simple_exp
+	: simple_exp1 AND_LOGIC THEN simple_exp
+	| simple_exp1 OR_LOGIC ELSE simple_exp
+	| simple_exp1
+	;
+
+simple_exp1
+	: simple_exp1 compareOperator simple_exp1
+	| simple_exp2
+	;
+
+simple_exp2
+	: simple_exp3 ADDITION simple_exp2
+	| simple_exp3 SUBTRACTION simple_exp2
+	| simple_exp3 OR_LOGIC simple_exp2
+	| simple_exp3
+	;
+
+simple_exp3
+	: simple_exp4 DIVISION simple_exp3
+	| simple_exp4 MULTIPLICATION simple_exp3
+	| simple_exp4 DIV simple_exp3
+	| simple_exp4 MOD simple_exp3
+	| simple_exp4 AND_LOGIC simple_exp3
+	| simple_exp4
+	;
+
+simple_exp4
+	: simple_exp4 NOT operand
+	| simple_exp4 SUBTRACTION operand
+	| operand
+	;
+
+operand
+	: literals
+	| ID
+	| ARRAY_ELEMENT
+	| funcall
+	;
+unaryOperator
+	: NOT
+	;
+
+compareOperator
+	: LESS_THAN
+	| LESS_THAN_EQUAL
+	| GREATER_THAN
+	| GREATER_THAN_EQUAL
+	| NOT_EQUAL
+	| EQUAL
+	;
+
+operandOperator
+	: ADDITION
+	| SUBTRACTION
+	| MULTIPLICATION
+	| DIVISION
+	| LESS_THAN
+	| LESS_THAN_EQUAL
+	| GREATER_THAN
+	| GREATER_THAN_EQUAL
+	| NOT_EQUAL
+	| EQUAL
+	;
+
+binaryOperator
+	: AND_LOGIC
+	| AND_LOGIC THEN
+	| OR_LOGIC
+	| OR_LOGIC ELSE
+	| ADDITION
+	| SUBTRACTION
+	| MULTIPLICATION
+	| DIV
+	| MOD
+	| LESS_THAN
+	| LESS_THAN_EQUAL
+	| GREATER_THAN
+	| GREATER_THAN_EQUAL
+	| NOT_EQUAL
+	| EQUAL
+	| DIVISION
+	;
+
+intoperator
+	: ADDITION
+	| SUBTRACTION
+	| MULTIPLICATION
+	| DIV
+	| MOD
+	| LESS_THAN
+	| LESS_THAN_EQUAL
+	| GREATER_THAN
+	| GREATER_THAN_EQUAL
+	| NOT_EQUAL
+	| EQUAL
+	| DIVISION
+	;
+
+realoperator
+	: ADDITION
+	| SUBTRACTION
+	| MULTIPLICATION
+	| DIV
+	| MOD
+	| LESS_THAN
+	| LESS_THAN_EQUAL
+	| GREATER_THAN
+	| GREATER_THAN_EQUAL
+	| NOT_EQUAL
+	| EQUAL
+	| DIVISION
+	;
 
 WS : [ \t\r\n]+ -> skip ; // skip spaces, tabs, newlines
 
