@@ -15,29 +15,32 @@ options{
 }
 
 
-program: many_declarations ;
+program: many_declarations EOF;
 
 many_declarations: many_declarations declaration | declaration;
 
 declaration: var_dec | fun_dec | procedure_dec ;
 
+// 2.1
 var_dec: VAR varlist_dec ;
  
 varlist_dec: one_var_dec varlist_dec | one_var_dec ; 
 
-one_var_dec:  idlist COLON TYPE SEMI ;
+one_var_dec:  idlist COLON types  SEMI ;
 
 idlist: ID COMMA idlist | ID;
 
-fun_dec: FUNCTION ID LB paralist RB COLON TYPE SEMI (var_dec)? compoundStatement ;
+//2.2
 
-procedure_dec: PROCEDURE ID LB paralist RB SEMI var_dec compoundStatement ;
+fun_dec: FUNCTION ID LB paralist RB COLON types SEMI (var_dec)? compoundStatement ;
+
+procedure_dec: PROCEDURE ID LB paralist RB SEMI var_dec? compoundStatement ;
 
 paralist: para_dec SEMI paralist | (para_dec)? ;
 
-para_dec: idlist COLON TYPE ;
+para_dec: idlist COLON types ;
 
-TYPE: PRIMITIVE_TYPES | COMBOUND_TYPE ;
+types: primitive_types| compound_type ;
 
 
 fragment A: [aA];
@@ -212,16 +215,24 @@ fragment SIGN: '-';
 
 BOOL_LIT: TRUE | FALSE;
 
-STRING_LIT: '"' (STR_EXCEPT)* '"';
+fragment LEGAL_ESCAPE: '\\b' | '\\f' | '\\r' | '\\n' | '\\t' | '\\\'' | '\\"' | '\\''\\';
 
-fragment STR_EXCEPT: ~[\b\f\r\n\t'"\\]+;
+UNCLOSE_STRING:
+    '"' (~[\n\r\b\f\t\\'"] | LEGAL_ESCAPE)* {raise UncloseString(self.text[1:])};
+
+ILLEGAL_ESCAPE:
+    UNCLOSE_STRING [\b\f\t\\'] { raise IllegalEscape(self.text[1:])};
+
+STRING_LIT:
+    UNCLOSE_STRING '"' {self.text = self.text[1:-1]};
+
 //TYPE AND VALUE
 
-PRIMITIVE_TYPES: ( BOOLEAN | INTEGER | REAL | STRING );
+primitive_types: ( BOOLEAN | INTEGER | REAL | STRING );
 
-COMBOUND_TYPE: ARRAY;
+compound_type: array_dec;
 
-array_dec: ARRAY LSB expression DD expression RSB OF PRIMITIVE_TYPES ;
+array_dec: ARRAY LSB expression DD expression RSB OF primitive_types ;
 
 operand
 	: literals
@@ -290,7 +301,7 @@ listexp: expression COMMA listexp | expression ;
 compoundStatement: BEGIN (lis_statements)? END ;
 
 statements
-	: assignstatement
+  	: assignstatement
 	| ifstatement
 	| whilestatement
 	| forstatement
@@ -332,7 +343,7 @@ callstatements: funcall SEMI ;
 ID: [a-zA-Z_][a-zA-Z0-9_]* ;
 
 WS : [ \t\r\n]+ -> skip ; // skip spaces, tabs, newlines
-
+ERROR_CHAR:. {raise ErrorToken(self.text)};
  /*ERROR_CHAR: .;
 UNCLOSE_STRING: .;
 ILLEGAL_ESCAPE: .; 
