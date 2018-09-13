@@ -1,3 +1,9 @@
+/*
+   **************************************
+    Student name: Phan Thao 
+    Student ID: 1613135                
+   **************************************
+*/
 grammar MP;
 
 @lexer::header {
@@ -17,37 +23,63 @@ declaration: var_dec | fun_dec | procedure_dec ;
 
 var_dec: VAR varlist_dec ;
  
-varlist_dec: idlist COLON TYPE SEMI varlist_dec | idlist COLON TYPE SEMI ;
+varlist_dec: one_var_dec varlist_dec | one_var_dec ; 
 
-fun_dec: FUNCTION ID LB paralist RB COLON TYPE SEMI var_dec? compoundStatement ;
-
-procedure_dec: PROCEDURE ID LB paralist RB SEMI var_dec compoundStatement ;
+one_var_dec:  idlist COLON TYPE SEMI ;
 
 idlist: ID COMMA idlist | ID;
+
+fun_dec: FUNCTION ID LB paralist RB COLON TYPE SEMI (var_dec)? compoundStatement ;
+
+procedure_dec: PROCEDURE ID LB paralist RB SEMI var_dec compoundStatement ;
 
 paralist: para_dec SEMI paralist | (para_dec)? ;
 
 para_dec: idlist COLON TYPE ;
 
+TYPE: PRIMITIVE_TYPES | COMBOUND_TYPE ;
 
-ID: [a-zA-Z_][a-zA-Z0-9_]* ;
 
-INTLIT: [0-9]+;
+fragment A: [aA];
+fragment B: [bB];
+fragment C: [cC];
+fragment D: [dD];
+fragment E: [eE];
+fragment F: [fF];
+fragment G: [gG];
+fragment H: [hH];
+fragment I: [iI];
+fragment J: [jJ];
+fragment K: [kK];
+fragment L: [lL];
+fragment M: [mM];
+fragment N: [nN];
+fragment O: [oO];
+fragment P: [pP];
+fragment Q: [qQ];
+fragment R: [rR];
+fragment S: [sS];
+fragment T: [tT];
+fragment U: [uU];
+fragment V: [vV];
+fragment W: [wW];
+fragment X: [xX];
+fragment Y: [yY];
+fragment Z: [zZ];
 
-FLOATLIT: FRACPART EXPOPART?  | [0-9]+ EXPOPART;
+COMMENT_1
+   : '(*' .*? '*)' -> skip ;
 
-fragment FRACPART: INTLIT? '.' INTLIT | INTLIT '.';
 
-fragment EXPOPART: E SIGN? INTLIT;
+COMMENT_2
+   : '{' .*? '}' -> skip ;
 
-fragment SIGN: '-';
+COMENT_3
+	:  '//' ~[\r\n]* -> skip ;
 
-BOOL_LIT: TRUE | FALSE;
 
-STRING_LIT: '"' (STR_EXCEPT)* '"';
-
-fragment STR_EXCEPT: ~[\b\f\r\n\t'"\\]+;
 //KEYWORD
+
 
 
 BREAK: B R E A K;
@@ -102,7 +134,6 @@ INTEGER: I N T E G E R;
 
 STRING: S T R I N G;
 
-NOT: N O T;
 
 WITH: W I T H;
 //OPERATOR
@@ -115,9 +146,7 @@ MULTIPLICATION: '*';
 
 DIVISION: '/';
 
-NOT_LOGIC: NOT ;
-
-MODULUS: MOD ;
+NOT: N O T ;
 
 AND: A N D;
 
@@ -170,16 +199,35 @@ literals
 	| BOOL_LIT
 	| STRING_LIT
 	;
+
+INTLIT: [0-9]+;
+
+FLOATLIT: FRACPART EXPOPART?  | [0-9]+ EXPOPART;
+
+fragment FRACPART: INTLIT? '.' INTLIT | INTLIT '.';
+
+fragment EXPOPART: E SIGN? INTLIT;
+
+fragment SIGN: '-';
+
+BOOL_LIT: TRUE | FALSE;
+
+STRING_LIT: '"' (STR_EXCEPT)* '"';
+
+fragment STR_EXCEPT: ~[\b\f\r\n\t'"\\]+;
 //TYPE AND VALUE
-TYPE: PRIMITIVE_TYPES | COMBOUND_TYPE ;
 
 PRIMITIVE_TYPES: ( BOOLEAN | INTEGER | REAL | STRING );
 
 COMBOUND_TYPE: ARRAY;
 
-return_type: TYPE ;
-
 array_dec: ARRAY LSB expression DD expression RSB OF PRIMITIVE_TYPES ;
+
+operand
+	: literals
+	| ID
+	| funcall
+	;
 
 expression:
     expression ANDTHEN expression1
@@ -232,20 +280,28 @@ expression6:
 arrayelement:
     expression5 LSB expression RSB
     ;
-operand
-	: literals
-	| ID
-	| funcall
-	;
-unaryOperator
-	: NOT
-	;
 
 funcall: ID LB listexp? RB ;
 
 listexp: expression COMMA listexp | expression ;
 
 //statement
+
+compoundStatement: BEGIN (lis_statements)? END ;
+
+statements
+	: assignstatement
+	| ifstatement
+	| whilestatement
+	| forstatement
+	| breakstatement
+	| continuestatement
+	| returnstatement
+	| compoundStatement
+	| withstatements
+	| callstatements
+	;
+
 assignstatement: (variable ASSIGN)+ expression SEMI ;
 
 variable: ID | arrayelement;
@@ -266,8 +322,6 @@ continuestatement: CONTINUE SEMI ;
 
 returnstatement: RETURN expression? SEMI ;
 
-compoundStatement: BEGIN (lis_statements)? END ;
-
 lis_statements: statements lis_statements | statements ;
 
 withstatements: WITH varlist_dec DO statements;
@@ -275,62 +329,11 @@ withstatements: WITH varlist_dec DO statements;
 callstatements: funcall SEMI ;
 
 
-statements
-	: assignstatement
-	| ifstatement
-	| whilestatement
-	| forstatement
-	| breakstatement
-	| continuestatement
-	| returnstatement
-	| compoundStatement
-	| withstatements
-	| callstatements
-	;
-
+ID: [a-zA-Z_][a-zA-Z0-9_]* ;
 
 WS : [ \t\r\n]+ -> skip ; // skip spaces, tabs, newlines
 
-COMMENT_1
-   : '(*' .*? '*)' -> skip ;
-
-
-COMMENT_2
-   : '{' .*? '}' -> skip ;
-
-COMENT_3
-	:  '//' ~[\r\n]* -> skip ;
-
-
-
-
-fragment A: [aA];
-fragment B: [bB];
-fragment C: [cC];
-fragment D: [dD];
-fragment E: [eE];
-fragment F: [fF];
-fragment G: [gG];
-fragment H: [hH];
-fragment I: [iI];
-fragment J: [jJ];
-fragment K: [kK];
-fragment L: [lL];
-fragment M: [mM];
-fragment N: [nN];
-fragment O: [oO];
-fragment P: [pP];
-fragment Q: [qQ];
-fragment R: [rR];
-fragment S: [sS];
-fragment T: [tT];
-fragment U: [uU];
-fragment V: [vV];
-fragment W: [wW];
-fragment X: [xX];
-fragment Y: [yY];
-fragment Z: [zZ];
-/*ERROR_CHAR: .;
+ /*ERROR_CHAR: .;
 UNCLOSE_STRING: .;
 ILLEGAL_ESCAPE: .; 
  
